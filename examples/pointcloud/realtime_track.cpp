@@ -1,3 +1,6 @@
+//
+// Created by john on 2021/11/9.
+//
 //// License: Apache 2.0. See LICENSE file in root directory.
 //// Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 //
@@ -563,4 +566,5 @@ void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& 
     glPopAttrib();
     glPushMatrix();
 }
+
 
