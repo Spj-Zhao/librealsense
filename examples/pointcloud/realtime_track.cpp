@@ -1,7 +1,9 @@
+
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include "../example.hpp" // Include short list of convenience functions for rendering
 
-//#include <pcl/point_types.h>
+#include <iostream>
+
 #include <pcl/filters/passthrough.h>
 
 #include <boost/make_shared.hpp>               //boost指针相关头文件
@@ -50,111 +52,6 @@ public:
 };
 
 
-void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt, PointCloud::Ptr output, Eigen::Matrix4f &final_transform, bool downsample = false)
-{
-    // Downsample for consistency and speed
-    // \note enable this for large datasets
-    PointCloud::Ptr src(new PointCloud); //存储滤波后的源点云
-    PointCloud::Ptr tgt(new PointCloud); //存储滤波后的目标点云
-    pcl::VoxelGrid<PointT> grid;         //滤波处理对象
-    if (downsample)
-    {
-        grid.setLeafSize(0.05, 0.05, 0.05); //设置滤波时采用的体素大小
-        grid.setInputCloud(cloud_src);
-        grid.filter(*src);
-
-        grid.setInputCloud(cloud_tgt);
-        grid.filter(*tgt);
-    }
-    else
-    {
-        src = cloud_src;
-        tgt = cloud_tgt;
-    }
-    // 计算表面的法向量和曲率
-    PointCloudWithNormals::Ptr points_with_normals_src(new PointCloudWithNormals);
-    PointCloudWithNormals::Ptr points_with_normals_tgt(new PointCloudWithNormals);
-
-    pcl::NormalEstimation<PointT, PointNormalT> norm_est; //点云法线估计对象
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
-    norm_est.setSearchMethod(tree);
-    norm_est.setKSearch(30);
-
-    norm_est.setInputCloud(src);
-    norm_est.compute(*points_with_normals_src);
-    pcl::copyPointCloud(*src, *points_with_normals_src);
-
-    norm_est.setInputCloud(tgt);
-    norm_est.compute(*points_with_normals_tgt);
-    pcl::copyPointCloud(*tgt, *points_with_normals_tgt);
-
-    //
-    // Instantiate our custom point representation (defined above) ...
-    MyPointRepresentation point_representation;
-    // ... and weight the 'curvature' dimension so that it is balanced against x, y, and z
-    float alpha[4] = {1.0, 1.0, 1.0, 1.0};
-    point_representation.setRescaleValues(alpha);
-
-    //
-    // 配准
-    pcl::IterativeClosestPointNonLinear<PointNormalT, PointNormalT> reg; // 配准对象
-    reg.setTransformationEpsilon(1e-6);
-    //设置收敛判断条件，越小精度越大，收敛也越慢
-    // Set the maximum distance between two correspondences (src<->tgt) to 10cm大于此值的点对不考虑
-    // Note: adjust this based on the size of your datasets
-    reg.setMaxCorrespondenceDistance(0.1);
-    // 设置点表示
-    reg.setPointRepresentation(boost::make_shared<const MyPointRepresentation>(point_representation));
-
-    reg.setInputSource(points_with_normals_src); // 设置源点云
-    reg.setInputTarget(points_with_normals_tgt); // 设置目标点云
-    //
-    // Run the same optimization in a loop and visualize the results
-    Eigen::Matrix4f Ti = Eigen::Matrix4f::Identity(), prev, targetToSource;
-    PointCloudWithNormals::Ptr reg_result = points_with_normals_src;
-    reg.setMaximumIterations(2); ////设置最大的迭代次数，即每迭代两次就认为收敛，停止内部迭代
-    for (int i = 0; i < 30; ++i) //手动迭代，每手动迭代一次，在配准结果视口对迭代的最新结果进行刷新显示
-    {
-        //PCL_INFO("Iteration Nr. %d.\n", i);
-
-        // 存储点云以便可视化
-        //points_with_normals_src = reg_result;
-
-        // Estimate
-        reg.setInputSource(points_with_normals_src);
-        reg.align(*reg_result);
-
-        //accumulate transformation between each Iteration
-        Ti = reg.getFinalTransformation() * Ti;
-
-        //if the difference between this transformation and the previous one
-        //is smaller than the threshold, refine the process by reducing
-        //the maximal correspondence distance
-        if (fabs((reg.getLastIncrementalTransformation() - prev).sum()) < reg.getTransformationEpsilon())
-            reg.setMaxCorrespondenceDistance(reg.getMaxCorrespondenceDistance() - 0.001);
-
-        prev = reg.getLastIncrementalTransformation();
-
-        // visualize current state
-        //showCloudsRight(points_with_normals_tgt, points_with_normals_src);
-    }
-
-    //
-    // Get the transformation from target to source
-    targetToSource = Ti.inverse(); //deidao
-
-    //
-    // Transform target back in source frame
-    pcl::transformPointCloud(*cloud_tgt, *output, targetToSource);
-
-
-
-    //add the source to the transformed target
-    *output += *cloud_src;
-
-    final_transform = targetToSource;
-}
-
 
 // Struct for managing rotation of pointcloud view
 struct state {
@@ -202,47 +99,22 @@ int main(int argc, char * argv[]) try
     state app_state;
 //    // register callbacks to allow manipulation of the pointcloud
     register_glfw_callbacks(app, app_state);
-//
-//    // Declare pointcloud object, for calculating pointclouds and texture mappings
-//    rs2::pointcloud pc;
-//    // We want the points object to be persistent so we can display the last cloud when a frame drops
-//    rs2::points points;
-//
-//    // Declare RealSense pipeline, encapsulating the actual device and sensors
-//    rs2::pipeline pipe;
-//    // Start streaming with default recommended configuration
-//    pipe.start();
-//
-//    // Wait for the next set of frames from the camera
-//    auto frames = pipe.wait_for_frames();
-//
-//    auto depth = frames.get_depth_frame();
-//
-//    // Generate the pointcloud and texture mappings
-//    points = pc.calculate(depth);
-//
-//    auto pcl_points = points_to_pcl(points);
 
-    pcl_ptr pcl_points;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>);
+    //pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud<pcl::PointXYZ>);
+
     pcl::PCDReader reader;
-    reader.read (argv[1], *pcl_points);
-
-    pcl_ptr cloud_filtered1(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PassThrough<pcl::PointXYZ> pass;
-    pass.setInputCloud(pcl_points);
-    pass.setFilterFieldName("z");
-    pass.setFilterLimits(0.1, 0.3);
-
-
-    pass.filter(*cloud_filtered1);
+    reader.read (argv[1], *cloud_in);
 
 
     std::vector<pcl_ptr> layers;
-    layers.push_back(pcl_points);
-    layers.push_back(cloud_filtered1);
+    layers.push_back(cloud_in);
     draw_pointcloud(app, app_state, layers);
 
     while (app) // Application still alive?
+//    {
+//        draw_pointcloud(app, app_state, layers);
+//    }
     {
 
         rs2::pointcloud pc;
@@ -263,40 +135,50 @@ int main(int argc, char * argv[]) try
 
         auto clouds = points_to_pcl(points);
 
-        pcl_ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+
         pcl::PassThrough<pcl::PointXYZ> pass;
         pass.setInputCloud(clouds);
 
         //设置点云距离相机的位置
         pass.setFilterFieldName("z");
-        pass.setFilterLimits(0.1, 0.3);
+        pass.setFilterLimits(0.1, 0.25);
 
-       pass.filter(*cloud_filtered);
 
-        std::vector<pcl_ptr> layers;
+       pass.filter(*clouds);
+
+        pcl::io::savePCDFileASCII("out.pcd", *clouds);
+        std::cerr << "Saved " << clouds->points.size() << " data points to out.pcd." << std::endl;
+       //cloud_out = clouds;
+         std::vector<pcl_ptr> layers;
+ //        layers.push_back(clouds);
         layers.push_back(clouds);
-        layers.push_back(cloud_filtered);
         draw_pointcloud(app, app_state, layers);
-//        pcl::PCDWriter writer;
-//        writer.write("./test_pcd.pcd", cloud_filtered, false);
 
 
-        PointCloud::Ptr result(new PointCloud), source, target;
-        Eigen::Matrix4f GlobalTransform = Eigen::Matrix4f::Identity(), pairTransform;
-        PointCloud::Ptr temp(new PointCloud);
-        //PCL_INFO("Aligning %s (%d) with %s (%d).\n", data[i - 1].f_name.c_str(), source->points.size(), data[i].f_name.c_str(), target->points.size());
-        // pairTransform返回从目标点云target到source的变换矩阵
-        pairAlign(cloud_filtered1, cloud_filtered, temp, pairTransform, true);  // ===================重点=========================
-        cout << pairTransform << std::endl << '\n';
+ //        pcl::PCDWriter writer;
+ //        writer.write("./test_pcd.pcd", cloud_filtered, false);
 
-//        //把当前两两配准后的点云temp转化到全局坐标系下返回result
-//        pcl::transformPointCloud(*temp, *result, GlobalTransform);
-//
-//        //用当前的两组点云之间的变换更新全局变换
-//        GlobalTransform = GlobalTransform * pairTransform;
+        // 创建IterativeClosestPoint的实例
+        // setInputSource将cloud_in作为输入点云
+        // setInputTarget将平移后的cloud_out作为目标点云
+        pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+        icp.setInputSource(cloud_in);
+        icp.setInputTarget(clouds);
 
+        // 创建一个 pcl::PointCloud<pcl::PointXYZ>实例 Final 对象,存储配准变换后的源点云,
+        // 应用 ICP 算法后, IterativeClosestPoint 能够保存结果点云集,如果这两个点云匹配正确的话
+        // （即仅对其中一个应用某种刚体变换，就可以得到两个在同一坐标系下相同的点云）,那么 icp. hasConverged()= 1 (true),
+        // 然后会输出最终变换矩阵的匹配分数和变换矩阵等信息。
+        pcl::PointCloud<pcl::PointXYZ> Final;
+        icp.align(Final);
+        std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+        const pcl::Registration<pcl::PointXYZ, pcl::PointXYZ, float>::Matrix4 &matrix = icp.getFinalTransformation();
+        std::cout << matrix << std::endl;
 
     }
+
+
+
 
     return EXIT_SUCCESS;
 }

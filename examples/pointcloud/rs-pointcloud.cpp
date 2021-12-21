@@ -270,7 +270,7 @@ int main(int argc, char * argv[]) try
 
         //设置点云距离相机的位置
         pass1.setFilterFieldName("z");
-        pass1.setFilterLimits(0.0, 0.3);
+        pass1.setFilterLimits(0.1, 0.25);
         pass1.filter(*cloud_filtered);
 
         std::vector<pcl_ptr> layers;
@@ -295,7 +295,7 @@ int main(int argc, char * argv[]) try
     pcl::PassThrough<pcl::PointXYZ> pass;
     pass.setInputCloud(pcl_points);
     pass.setFilterFieldName("z");
-    pass.setFilterLimits(0.1, 0.3);
+    pass.setFilterLimits(0.1, 0.25);
 
     pass.filter(*cloud_filtered1);
 
