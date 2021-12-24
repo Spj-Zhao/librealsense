@@ -1,5 +1,5 @@
-// License: Apache 2.0. See LICENSE file in root directory.
-// Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+ // License: Apache 2.0. See LICENSE file in root directory.
+ // Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include "../example.hpp" // Include short list of convenience functions for rendering
@@ -7,17 +7,19 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/passthrough.h>
 
-// Struct for managing rotation of pointcloud view
+ // Struct for managing rotation of pointcloud view
 struct state {
     state() : yaw(0.0), pitch(0.0), last_x(0.0), last_y(0.0),
         ml(false), offset_x(0.0f), offset_y(0.0f) {}
-    double yaw, pitch, last_x, last_y; bool ml; float offset_x, offset_y; 
+    double yaw, pitch, last_x, last_y; bool ml; float offset_x, offset_y;
 };
 
 using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
 
-// Helper functions
+ // Helper functions
+ //注册状态变量和回调以允许鼠标控制点云
 void register_glfw_callbacks(window& app, state& app_state);
+ //处理显示点云所需的所有 OpenGL 调用
 void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& points);
 
 pcl_ptr points_to_pcl(const rs2::points& points)
@@ -41,7 +43,7 @@ pcl_ptr points_to_pcl(const rs2::points& points)
     return cloud;
 }
 
-float3 colors[] { { 0.8f, 0.1f, 0.3f }, 
+float3 colors[] { { 0.8f, 0.1f, 0.3f },
                   { 0.1f, 0.9f, 0.5f },
                 };
 
@@ -74,16 +76,16 @@ int main(int argc, char * argv[]) try
 
     auto pcl_points = points_to_pcl(points);
 
-    pcl_ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+    //pcl_ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PassThrough<pcl::PointXYZ> pass;
     pass.setInputCloud(pcl_points);
     pass.setFilterFieldName("z");
-    pass.setFilterLimits(0.0, 1.0);
-    pass.filter(*cloud_filtered);
+    pass.setFilterLimits(0.0, 0.25);
+    pass.filter(*pcl_points);
 
     std::vector<pcl_ptr> layers;
     layers.push_back(pcl_points);
-    layers.push_back(cloud_filtered);
+    //layers.push_back(cloud_filtered);
 
     while (app) // Application still alive?
     {
@@ -103,7 +105,7 @@ catch (const std::exception & e)
     return EXIT_FAILURE;
 }
 
-// Registers the state variable and callbacks to allow mouse control of the pointcloud
+ // Registers the state variable and callbacks to allow mouse control of the pointcloud
 void register_glfw_callbacks(window& app, state& app_state)
 {
     app.on_left_mouse = [&](bool pressed)
@@ -141,7 +143,7 @@ void register_glfw_callbacks(window& app, state& app_state)
     };
 }
 
-// Handles all the OpenGL calls needed to display the point cloud
+ // Handles all the OpenGL calls needed to display the point cloud
 void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& points)
 {
     // OpenGL commands that prep screen for the pointcloud
@@ -152,6 +154,13 @@ void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& 
 
     glClearColor(153.f / 255, 153.f / 255, 153.f / 255, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+ //    glMatrixMode(GLenum mode)
+ //    作用：用于指定用哪个矩阵作为当前矩阵，mode用于指定哪一种矩阵栈是其后矩阵操作的目标。mode可取：
+ //    GL_MODELVIEW: 把其后的矩阵操作施加于造型视图矩阵栈。（默认）
+ //    GL_PROJECTION: 把其后的矩阵操作施加于投影矩阵栈。
+ //    GL_TEXTURE： 把其后的矩阵操作施加于纹理矩阵栈。
+
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -191,6 +200,19 @@ void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& 
 
         glEnd();
     }
+
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glBegin(GL_POLYGON);// 设置各个顶点，glBegin开始,glEnd结束
+    glVertex3f(0.0,0.0,0.0);
+    glVertex3f(0.0,0.3,0.0);
+    glVertex3f(0.3,0.0,0.0);
+    glVertex3f(0.3,0.3,0.0);
+ //    glVertex3f(0.3,0.0,0.3);
+ //    glVertex3f(0.0,0.0,0.3);
+ //    glVertex3f(0.0,0.3,0.3);
+ //    glVertex3f(0.3,0.3,0.3);
+    glEnd();
+
 
     // OpenGL cleanup
     glPopMatrix();

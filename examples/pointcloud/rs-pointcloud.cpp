@@ -360,6 +360,7 @@ void register_glfw_callbacks(window& app, state& app_state)
     };
 }
 
+
 // Handles all the OpenGL calls needed to display the point cloud
 void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& points)
 {
@@ -412,7 +413,76 @@ void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& 
         glEnd();
     }
 
-    // OpenGL cleanup
+
+     float vertex_list[][3] =
+    {
+             {0.0, 0.0, 0.2},
+             {0.0, 0.1, 0.2},
+             {0.1, 0.1, 0.2},
+             {0.1, 0.0, 0.2},
+
+             {0.1, 0.0, 0.25},
+             {0.0, 0.0, 0.25},
+             {0.0, 0.1, 0.25},
+             {0.1, 0.1, 0.25}
+
+    };
+    //绘制一个矩形,默认为填充模式
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glBegin(GL_POLYGON);// 设置各个顶点，glBegin开始,glEnd结束
+//    glVertex3f(0.0,0.0,0.2);
+//    glVertex3f(0.0,0.1,0.2);
+//    glVertex3f(0.1,0.1,0.2);
+//    glVertex3f(0.1,0.0,0.2);
+//
+//    glVertex3f(0.1,0.0,0.25);
+//    glVertex3f(0.0,0.0,0.25);
+//    glVertex3f(0.0,0.1,0.25);
+//    glVertex3f(0.1,0.1,0.25);
+
+    glVertex3f(vertex_list[0][0],vertex_list[0][1],vertex_list[0][2]);
+    glVertex3f(vertex_list[1][0],vertex_list[1][1],vertex_list[1][2]);
+    glVertex3f(vertex_list[2][0],vertex_list[2][1],vertex_list[3][2]);
+    glVertex3f(vertex_list[3][0],vertex_list[3][1],vertex_list[3][2]);
+    glEnd();
+
+
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glBegin(GL_POLYGON);// 设置各个顶点，glBegin开始,glEnd结束
+    glVertex3f(vertex_list[3][0],vertex_list[3][1],vertex_list[3][2]);
+    glVertex3f(vertex_list[4][0],vertex_list[4][1],vertex_list[4][2]);
+    glVertex3f(vertex_list[5][0],vertex_list[5][1],vertex_list[5][2]);
+    glVertex3f(vertex_list[0][0],vertex_list[0][1],vertex_list[0][2]);
+    glEnd();
+
+//    glVertex3f(vertex_list[0][0],vertex_list[0][1],vertex_list[0][2]);
+//    glVertex3f(vertex_list[5][0],vertex_list[5][1],vertex_list[5][2]);
+//    glVertex3f(vertex_list[6][0],vertex_list[6][1],vertex_list[6][2]);
+//    glVertex3f(vertex_list[1][0],vertex_list[1][1],vertex_list[1][2]);
+
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glBegin(GL_POLYGON);// 设置各个顶点，glBegin开始,glEnd结束
+    glVertex3f(vertex_list[4][0],vertex_list[4][1],vertex_list[4][2]);
+    glVertex3f(vertex_list[7][0],vertex_list[7][1],vertex_list[7][2]);
+    glVertex3f(vertex_list[6][0],vertex_list[6][1],vertex_list[6][2]);
+    glVertex3f(vertex_list[5][0],vertex_list[5][1],vertex_list[5][2]);
+    glEnd();
+
+//    glVertex3f(vertex_list[7][0],vertex_list[7][1],vertex_list[7][2]);
+//    glVertex3f(vertex_list[4][0],vertex_list[4][1],vertex_list[4][2]);
+//    glVertex3f(vertex_list[3][0],vertex_list[3][1],vertex_list[3][2]);
+//    glVertex3f(vertex_list[2][0],vertex_list[2][1],vertex_list[2][2]);
+
+    glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    glBegin(GL_POLYGON);// 设置各个顶点，glBegin开始,glEnd结束
+    glVertex3f(vertex_list[7][0],vertex_list[7][1],vertex_list[7][2]);
+    glVertex3f(vertex_list[6][0],vertex_list[6][1],vertex_list[6][2]);
+    glVertex3f(vertex_list[1][0],vertex_list[1][1],vertex_list[1][2]);
+    glVertex3f(vertex_list[2][0],vertex_list[2][1],vertex_list[2][2]);
+    glEnd();
+
+
+
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
