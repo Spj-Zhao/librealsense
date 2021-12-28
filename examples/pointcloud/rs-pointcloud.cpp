@@ -273,6 +273,9 @@ int main(int argc, char * argv[]) try
         pass1.setFilterLimits(0.1, 0.25);
         pass1.filter(*cloud_filtered);
 
+//        pass1.setFilterFieldName("y");
+//        pass1.setFilterLimits(0.3, 1);
+
         std::vector<pcl_ptr> layers;
         //layers.push_back(pcl_points);
         layers.push_back(cloud_filtered);
@@ -296,6 +299,9 @@ int main(int argc, char * argv[]) try
     pass.setInputCloud(pcl_points);
     pass.setFilterFieldName("z");
     pass.setFilterLimits(0.1, 0.25);
+
+//    pass.setFilterFieldName("y");
+//    pass.setFilterLimits(0.3, 1);
 
     pass.filter(*cloud_filtered1);
 

@@ -70,13 +70,14 @@ int main(int argc, char **argv)
 
 
 
-    // //实现一个简单的点云刚体变换，以构造目标点云，将cloud_out中的x平移0.7f米，然后再次输出数据值。
-    for (size_t i = 0; i < cloud_out->points.size(); ++i){
-        cloud_out->points[i].x = cloud_out->points[i].x + 0.7f;
-    }
 
-    pcl::io::savePCDFileASCII("out.pcd", *cloud_out);
-    std::cerr << "Saved " << cloud_out->points.size() << " data points to test_pcd.pcd." << std::endl;
+    // //实现一个简单的点云刚体变换，以构造目标点云，将cloud_out中的x平移0.7f米，然后再次输出数据值。
+//    for (size_t i = 0; i < cloud_out->points.size(); ++i){
+//        cloud_out->points[i].x = cloud_out->points[i].x + 0.3f;
+//    }
+
+//    pcl::io::savePCDFileASCII("out.pcd", *cloud_out);
+//    std::cerr << "Saved " << cloud_out->points.size() << " data points to test_pcd.pcd." << std::endl;
 
 //    // 打印这些点
 //    std::cout << "Transformed " << cloud_in->points.size() << " data points:"
@@ -103,12 +104,18 @@ int main(int argc, char **argv)
 
     std::vector<pcl_ptr> layers;
     //layers.push_back(pcl_points);
+    layers.push_back(cloud_in);
     layers.push_back(cloud_out);
     Eigen::Matrix<float, 4, 4> matrix_eig = Eigen::Matrix<float, 4, 4>(matrix);
+//    Eigen::Matrix<float, 4, 4> matrix_eig;
+//    matrix_eig << 1, 0, 0, 0.3,
+//                  0, 1, 0 , 0,
+//                  0, 0, 1, 0,
+//                  0 ,0 ,0, 1;
 
 
+    draw_pointcloud(app, app_state, layers);
     while (app){
-        //draw_pointcloud(app, app_state, layers);
         draw_cuboid(app, app_state, layers, matrix_eig);
     }
 
@@ -347,6 +354,8 @@ void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& 
     glPopAttrib();
     glPushMatrix();
 }
+
+
 
 
 
