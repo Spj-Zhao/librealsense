@@ -1,9 +1,3 @@
-//
-// Created by john on 2021/11/9.
-//
-
-#ifndef LIBREALSENSE2_REGISTER_H
-#define LIBREALSENSE2_REGISTER_H
 #include <boost/make_shared.hpp>               //boost指针相关头文件
 #include <pcl/point_types.h>                   //点类型定义头文件
 #include <pcl/point_cloud.h>                   //点云类定义头文件
@@ -26,7 +20,30 @@ typedef pcl::PointCloud<PointT> PointCloud; //申明pcl::PointXYZ数据
 typedef pcl::PointNormal PointNormalT;
 typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
 
-void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt, PointCloud::Ptr output, Eigen::Matrix4f &final_transform, bool downsample = false)
+
+class MyPointRepresentation : public pcl::PointRepresentation<PointNormalT>
+{
+    using pcl::PointRepresentation<PointNormalT>::nr_dimensions_;
+
+public:
+    MyPointRepresentation()
+    {
+        nr_dimensions_ = 4; //定义点的维度
+    }
+
+    // 重载copyToFloatArray方法将点转化为四维数组
+    virtual void copyToFloatArray(const PointNormalT &p, float *out) const
+    {
+        // < x, y, z, curvature >
+        out[0] = p.x;
+        out[1] = p.y;
+        out[2] = p.z;
+        out[3] = p.curvature; // 曲率
+    }
+};
+
+
+void pairAlign (const PointCloud::Ptr& cloud_src, const PointCloud::Ptr& cloud_tgt, PointCloud::Ptr& output, Eigen::Matrix4f &final_transform, bool downsample = false)
 {
     // Downsample for consistency and speed
     // \note enable this for large datasets
@@ -91,7 +108,7 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
     reg.setMaximumIterations(2); ////设置最大的迭代次数，即每迭代两次就认为收敛，停止内部迭代
     for (int i = 0; i < 30; ++i) //手动迭代，每手动迭代一次，在配准结果视口对迭代的最新结果进行刷新显示
     {
-        PCL_INFO("Iteration Nr. %d.\n", i);
+        //PCL_INFO("Iteration Nr. %d.\n", i);
 
         // 存储点云以便可视化
         points_with_normals_src = reg_result;
@@ -112,7 +129,7 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
         prev = reg.getLastIncrementalTransformation();
 
         // visualize current state
-        showCloudsRight(points_with_normals_tgt, points_with_normals_src);
+        //showCloudsRight(points_with_normals_tgt, points_with_normals_src);
     }
 
     //
@@ -123,23 +140,10 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
     // Transform target back in source frame
     pcl::transformPointCloud(*cloud_tgt, *output, targetToSource);
 
-    p->removePointCloud("source");
-    p->removePointCloud("target");
 
-    PointCloudColorHandlerCustom<PointT> cloud_tgt_h(output, 0, 255, 0);
-    PointCloudColorHandlerCustom<PointT> cloud_src_h(cloud_src, 255, 0, 0);
-    p->addPointCloud(output, cloud_tgt_h, "target", vp_2);
-    p->addPointCloud(cloud_src, cloud_src_h, "source", vp_2);
-
-    PCL_INFO("Press q to continue the registration.\n");
-    p->spin();
-
-    p->removePointCloud("source");
-    p->removePointCloud("target");
 
     //add the source to the transformed target
     *output += *cloud_src;
 
     final_transform = targetToSource;
 }
-#endif //LIBREALSENSE2_REGISTER_H

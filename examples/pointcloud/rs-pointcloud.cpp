@@ -217,14 +217,20 @@ pcl_ptr points_to_pcl(const rs2::points& points)
     cloud->is_dense = false;
     cloud->points.resize(points.size());
     auto ptr = points.get_vertices();
+
+    //pcd to txt
+    FILE* wc = fopen("test.txt","w");
+    fprintf(wc, "%d\n", 30000);
     for (auto& p : cloud->points)
     {
         p.x = ptr->x;
         p.y = ptr->y;
         p.z = ptr->z;
         ptr++;
+        if(ptr->z >= 0.05 && ptr->z <= 0.33 && ptr->y <= 0.1)
+        fprintf(wc, "%f\t%f\t%f\n", ptr->x, ptr->y, ptr->z);  //标准输出流   stdio.h   写
     }
-
+    fclose(wc);
     return cloud;
 }
 
@@ -265,16 +271,22 @@ int main(int argc, char * argv[]) try
         auto pcl_points = points_to_pcl(points);
 
         pcl_ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::PassThrough<pcl::PointXYZ> pass1;
-        pass1.setInputCloud(pcl_points);
+        pcl::PassThrough<pcl::PointXYZ> pass;
+        pass.setInputCloud(pcl_points);
 
-        //设置点云距离相机的位置
-        pass1.setFilterFieldName("z");
-        pass1.setFilterLimits(0.1, 0.25);
-        pass1.filter(*cloud_filtered);
+//        //设置点云距离相机的位置
 
-//        pass1.setFilterFieldName("y");
-//        pass1.setFilterLimits(0.3, 1);
+        pass.setFilterFieldName("z");
+        pass.setFilterLimits(0.05, 0.33);
+
+        pass.filter(*cloud_filtered);
+
+        //设置y轴
+        pcl::PassThrough<pcl::PointXYZ> pass2;
+        pass2.setInputCloud(cloud_filtered);
+        pass2.setFilterFieldName("y");
+        pass2.setFilterLimits(-1, 0.10);
+        pass2.filter(*cloud_filtered);
 
         std::vector<pcl_ptr> layers;
         //layers.push_back(pcl_points);
@@ -298,12 +310,18 @@ int main(int argc, char * argv[]) try
     pcl::PassThrough<pcl::PointXYZ> pass;
     pass.setInputCloud(pcl_points);
     pass.setFilterFieldName("z");
-    pass.setFilterLimits(0.1, 0.25);
+    pass.setFilterLimits(0.05, 0.30);
 
 //    pass.setFilterFieldName("y");
 //    pass.setFilterLimits(0.3, 1);
 
     pass.filter(*cloud_filtered1);
+
+    pcl::PassThrough<pcl::PointXYZ> pass2;
+    pass2.setInputCloud(cloud_filtered1);
+    pass2.setFilterFieldName("y");
+    pass2.setFilterLimits(-1, 0.10);
+    pass2.filter(*cloud_filtered1);
 
     std::vector<pcl_ptr> layers;
     layers.push_back(pcl_points);
@@ -423,14 +441,14 @@ void draw_pointcloud(window& app, state& app_state, const std::vector<pcl_ptr>& 
      float vertex_list[][3] =
     {
              {0.0, 0.0, 0.2},
-             {0.0, 0.1, 0.2},
-             {0.1, 0.1, 0.2},
-             {0.1, 0.0, 0.2},
+             {0.0, 0.12, 0.2},
+             {0.12, 0.12, 0.2},
+             {0.12, 0.0, 0.2},
 
-             {0.1, 0.0, 0.25},
+             {0.12, 0.0, 0.25},
              {0.0, 0.0, 0.25},
-             {0.0, 0.1, 0.25},
-             {0.1, 0.1, 0.25}
+             {0.0, 0.12, 0.25},
+             {0.12, 0.12, 0.25}
 
     };
     //绘制一个矩形,默认为填充模式

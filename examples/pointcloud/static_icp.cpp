@@ -72,18 +72,16 @@ int main(int argc, char **argv)
 
 
     // //实现一个简单的点云刚体变换，以构造目标点云，将cloud_out中的x平移0.7f米，然后再次输出数据值。
-//    for (size_t i = 0; i < cloud_out->points.size(); ++i){
-//        cloud_out->points[i].x = cloud_out->points[i].x + 0.3f;
-//    }
+    for (size_t i = 0; i < cloud_out->points.size(); ++i){
+        cloud_out->points[i].x = cloud_out->points[i].x + 0.3f;
+        cloud_out->points[i].y = cloud_out->points[i].y + 0.3f;
+        //cloud_out->points[i].z = cloud_out->points[i].z + 0.3f;
 
-//    pcl::io::savePCDFileASCII("out.pcd", *cloud_out);
-//    std::cerr << "Saved " << cloud_out->points.size() << " data points to test_pcd.pcd." << std::endl;
 
-//    // 打印这些点
-//    std::cout << "Transformed " << cloud_in->points.size() << " data points:"
-//              << std::endl;
-//    for (size_t i = 0; i < cloud_out->points.size(); ++i)                         //打印构造出来的目标点云
-//        std::cout << "    " << cloud_out->points[i].x << " " << cloud_out->points[i].y << " " << cloud_out->points[i].z << std::endl;
+    }
+
+    pcl::io::savePCDFileASCII("out.pcd", *cloud_out);
+    std::cerr << "Saved " << cloud_out->points.size() << " data points to out.pcd." << std::endl;
 
     // 创建IterativeClosestPoint的实例
     // setInputSource将cloud_in作为输入点云
@@ -176,13 +174,13 @@ void draw_cuboid(window& app, state& app_state, const std::vector<pcl_ptr>& poin
 
     Eigen::Matrix<float, 8, 4> matrix_84;
     matrix_84 << 0.0, 0.0, 0.2, 1,
-            0.0, 0.1, 0.2, 1,
-            0.1, 0.1, 0.2, 1,
-            0.1, 0.0, 0.2, 1,
-            0.1, 0.0, 0.25, 1,
+            0.0, 0.12, 0.2, 1,
+            0.12, 0.12, 0.2, 1,
+            0.12, 0.0, 0.2, 1,
+            0.12, 0.0, 0.25, 1,
             0.0, 0.0, 0.25, 1,
-            0.0, 0.1, 0.25, 1,
-            0.1, 0.1, 0.25, 1;
+            0.0, 0.12, 0.25, 1,
+            0.12, 0.12, 0.25, 1;
     Eigen::Matrix<float, 4, 8> matrix_48 = matrix_84.transpose();
     matrix_48 = matrix * matrix_48;
 
