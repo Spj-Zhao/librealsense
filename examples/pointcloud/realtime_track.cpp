@@ -151,28 +151,32 @@ int main(int argc, char * argv[]) try
  //        pcl::PCDWriter writer;
  //        writer.write("./test_pcd.pcd", cloud_filtered, false);
 
+
+
+        //************经典icp*************
         // 创建IterativeClosestPoint的实例
         // setInputSource将cloud_in作为输入点云
         // setInputTarget将平移后的cloud_out作为目标点云
-        pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-        icp.setInputSource(cloud_in);
-        icp.setInputTarget(clouds);
+//        pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+//        icp.setInputSource(cloud_in);
+//        icp.setInputTarget(clouds);
 
         // 创建一个 pcl::PointCloud<pcl::PointXYZ>实例 Final 对象,存储配准变换后的源点云,
         // 应用 ICP 算法后, IterativeClosestPoint 能够保存结果点云集,如果这两个点云匹配正确的话
         // （即仅对其中一个应用某种刚体变换，就可以得到两个在同一坐标系下相同的点云）,那么 icp. hasConverged()= 1 (true),
         // 然后会输出最终变换矩阵的匹配分数和变换矩阵等信息。
-        pcl::PointCloud<pcl::PointXYZ> Final;
-        icp.align(Final);
-        std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
-        const pcl::Registration<pcl::PointXYZ, pcl::PointXYZ, float>::Matrix4 &matrix = icp.getFinalTransformation();
-        cout << "icp:" << endl;
-        std::cout << matrix << std::endl;
+//        pcl::PointCloud<pcl::PointXYZ> Final;
+//        icp.align(Final);
+//        std::cout << "has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore() << std::endl;
+//        const pcl::Registration<pcl::PointXYZ, pcl::PointXYZ, float>::Matrix4 &matrix = icp.getFinalTransformation();
+//        cout << "icp:" << endl;
+//        std::cout << matrix << std::endl;
 
         Eigen::Matrix4f GlobalTransform = Eigen::Matrix4f::Identity(), pairTransform;
         PointCloud::Ptr temp(new PointCloud);
         // pairTransform返回从目标点云target到source的变换矩阵
-        pairAlign(clouds, cloud_in, temp, pairTransform, true);  // ===================重点=========================
+        // ===================重点=========================
+        pairAlign(clouds, cloud_in, temp, pairTransform, true);
         cout << "pairAlign:" << endl;
         cout << pairTransform << endl;
 
@@ -181,7 +185,7 @@ int main(int argc, char * argv[]) try
         //layers.push_back(pcl_points);
         layers.push_back(cloud_in);
         layers.push_back(clouds);
-        Eigen::Matrix<float, 4, 4> matrix_eig = Eigen::Matrix<float, 4, 4>(matrix);
+        //Eigen::Matrix<float, 4, 4> matrix_eig = Eigen::Matrix<float, 4, 4>(matrix);
         //draw_cuboid(app, app_state, layers, matrix_eig);
         draw_cuboid(app, app_state, layers, pairTransform);
 
